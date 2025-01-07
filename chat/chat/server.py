@@ -8,13 +8,10 @@ import base64
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-# Generate RSA keys
 private_key = RSA.generate(2048)
 public_key = private_key.publickey()
 
-# Dictionary to store AES keys for each session
 session_keys = {}
-
 @app.route('/')
 def index():
     return render_template('index.html', public_key=public_key.export_key().decode())
@@ -30,7 +27,6 @@ def handle_aes_key(data):
         encrypted_key = base64.b64decode(data['aes_key'])
         print(f"Base64-decoded AES key: {encrypted_key}")
         
-        # Decrypt AES key with RSA private key
         cipher_rsa = PKCS1_OAEP.new(private_key)
         aes_key = cipher_rsa.decrypt(encrypted_key)
         session_keys[data['sid']] = aes_key
@@ -51,7 +47,6 @@ def handle_message(data):
         encrypted_message = base64.b64decode(data['message'])
         nonce = base64.b64decode(data['nonce'])
 
-        # Decrypt message with AES key
         cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
         decrypted_message = cipher_aes.decrypt(encrypted_message).decode()
 
